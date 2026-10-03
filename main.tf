@@ -1,11 +1,13 @@
 resource "aws_instance" "workstation" {
-  ami           = local.ami_id
-  instance_type = "t3.micro"
+  ami                    = local.ami_id
+  instance_type          = "t3.micro"
   vpc_security_group_ids = [aws_security_group.workstation.id]
   user_data = templatefile("workstation.sh.tftpl", {
     aws_access_key = var.aws_access_key
     aws_secret_key = var.aws_secret_key
   })
+  user_data_replace_on_change = true
+
 
   root_block_device {
     volume_size = 50
@@ -13,15 +15,15 @@ resource "aws_instance" "workstation" {
     # EBS volume tags
     tags = merge(
       {
-          Name = "${var.project}-${var.environment}-workstation"
+        Name = "${var.project}-${var.environment}-workstation"
       },
-    local.common_tags
+      local.common_tags
     )
   }
 
   tags = merge(
     {
-        Name = "${var.project}-${var.environment}-workstation"
+      Name = "${var.project}-${var.environment}-workstation"
     },
     local.common_tags
   )
@@ -40,15 +42,15 @@ resource "aws_security_group" "workstation" {
   }
 
   ingress {
-    from_port        = 22
-    to_port          = 22
-    protocol         = "tcp"
-    cidr_blocks      =  ["${chomp(data.http.my_public_ip.response_body)}/32"]
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["${chomp(data.http.my_public_ip.response_body)}/32"]
   }
 
   tags = merge(
     {
-        Name = "${var.project}-${var.environment}-workstation"
+      Name = "${var.project}-${var.environment}-workstation"
     },
     local.common_tags
   )
@@ -67,9 +69,9 @@ resource "terraform_data" "cluster_destroy" {
   provisioner "remote-exec" {
     when = destroy
     inline = [
-      "eksctl delete cluster -f /home/ec2-user/eksctl/eksctl.yaml --wait"
+      "eksctl delete cluster --name roboshop --region us-east-1 --wait"
     ]
-    
+
     connection {
       type     = "ssh"
       host     = self.input.host
